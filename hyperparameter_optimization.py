@@ -22,12 +22,24 @@ def second_derivative(func, x: float, eps: float = 1e-5) -> float:
 
 
 def bisection(fprime, a: float, b: float, tol: float = 1e-5, max_iter: int = 100):
-    """Bisection method for root finding of derivative."""
+    """Bisection method for root finding of derivative.
+
+    If the derivative has the same sign at the interval endpoints, the
+    interval is automatically expanded using :func:`bracket_root` before
+    proceeding with the standard bisection iterations. This helps avoid
+    the common ``ValueError`` that occurs when the initial interval does
+    not bracket a root.
+    """
     history = []
     fa = fprime(a)
     fb = fprime(b)
     if fa * fb > 0:
-        raise ValueError("Derivative has the same sign at interval ends")
+        try:
+            a, b = bracket_root(fprime, a, b)
+            fa = fprime(a)
+            fb = fprime(b)
+        except Exception as exc:
+            raise ValueError("Derivative has the same sign at interval ends") from exc
     for _ in range(max_iter):
         c = 0.5 * (a + b)
         fc = fprime(c)
