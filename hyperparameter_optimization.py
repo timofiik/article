@@ -41,6 +41,23 @@ def bisection(fprime, a: float, b: float, tol: float = 1e-5, max_iter: int = 100
     return c, history
 
 
+def bracket_root(fprime, a: float, b: float, expand_factor: float = 1.5, max_expand_iter: int = 50):
+    """Expand interval until derivative changes sign."""
+    fa = fprime(a)
+    fb = fprime(b)
+    expand_iter = 0
+    while fa * fb > 0 and expand_iter < max_expand_iter:
+        width = b - a
+        a -= 0.5 * (expand_factor - 1) * width
+        b += 0.5 * (expand_factor - 1) * width
+        fa = fprime(a)
+        fb = fprime(b)
+        expand_iter += 1
+    if fa * fb > 0:
+        raise ValueError("Failed to bracket root after expansion attempts")
+    return a, b
+
+
 def secant(fprime, x0: float, x1: float, tol: float = 1e-5, max_iter: int = 100):
     """Secant method for root finding."""
     history = [x0, x1]
@@ -101,10 +118,13 @@ def main():
 
     a, b = -5.0, 5.0
 
-    x_bis, hist_bis = bisection(fprime, a, b)
+    # ensure the interval for bisection contains a sign change
+    a_bis, b_bis = bracket_root(fprime, a, b)
+
+    x_bis, hist_bis = bisection(fprime, a_bis, b_bis)
     x_sec, hist_sec = secant(fprime, a, b)
     x_new, hist_new = newton(fprime, fsecond, 0.0)
-    x_hyb, hist_hyb = hybrid(fprime, fsecond, a, b)
+    x_hyb, hist_hyb = hybrid(fprime, fsecond, a_bis, b_bis)
 
     xs = np.linspace(a, b, 200)
     ys = [objective(x) for x in xs]
